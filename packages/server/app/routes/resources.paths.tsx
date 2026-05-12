@@ -53,7 +53,9 @@ export const PathsCard = ({
             dataFetcher={useFetcher<typeof loader>()}
             filters={filters}
             loaderUrl="/resources/paths"
-            onClick={(path) => onFilterChange({ ...filters, path })}
+            onClick={(value, op) =>
+                onFilterChange({ ...filters, path: { op, value } })
+            }
             timezone={timezone}
         />
     );

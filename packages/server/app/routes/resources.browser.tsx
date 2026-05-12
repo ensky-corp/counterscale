@@ -47,8 +47,11 @@ export const BrowserCard = ({
             dataFetcher={useFetcher<typeof loader>()}
             loaderUrl="/resources/browser"
             filters={filters}
-            onClick={(browserName) =>
-                onFilterChange({ ...filters, browserName })
+            onClick={(value, op) =>
+                onFilterChange({
+                    ...filters,
+                    browserName: { op, value },
+                })
             }
             timezone={timezone}
         />

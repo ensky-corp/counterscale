@@ -49,7 +49,9 @@ export const ReferrerCard = ({
             dataFetcher={useFetcher<typeof loader>()}
             loaderUrl="/resources/referrer"
             filters={filters}
-            onClick={(referrer) => onFilterChange({ ...filters, referrer })}
+            onClick={(value, op) =>
+                onFilterChange({ ...filters, referrer: { op, value } })
+            }
             timezone={timezone}
         />
     );

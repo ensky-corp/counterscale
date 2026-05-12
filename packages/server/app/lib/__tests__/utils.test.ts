@@ -13,17 +13,17 @@ dayjs.extend(timezone);
 
 // test this getfiltersfromsearchparams function
 describe("getFiltersFromSearchParams", () => {
-    test("it should return an object with the correct keys", () => {
+    test("it should return an object with the correct keys (eq operator)", () => {
         const searchParams = new URLSearchParams(
             "?path=/about&referrer=google.com&deviceType=mobile&country=us&browserName=chrome&browserVersion=118",
         );
         expect(getFiltersFromSearchParams(searchParams)).toEqual({
-            path: "/about",
-            referrer: "google.com",
-            deviceType: "mobile",
-            country: "us",
-            browserName: "chrome",
-            browserVersion: "118",
+            path: { op: "eq", value: "/about" },
+            referrer: { op: "eq", value: "google.com" },
+            deviceType: { op: "eq", value: "mobile" },
+            country: { op: "eq", value: "us" },
+            browserName: { op: "eq", value: "chrome" },
+            browserVersion: { op: "eq", value: "118" },
         });
     });
 
@@ -31,7 +31,7 @@ describe("getFiltersFromSearchParams", () => {
         // only path is valid; unknown should be discarded
         const searchParams = new URLSearchParams("?unknown=foo&path=/about");
         expect(getFiltersFromSearchParams(searchParams)).toEqual({
-            path: "/about",
+            path: { op: "eq", value: "/about" },
         });
     });
 
@@ -40,12 +40,12 @@ describe("getFiltersFromSearchParams", () => {
             "?utmSource=google&utmMedium=cpc&utmCampaign=summer_sale&utmTerm=analytics&utmContent=banner_ad&path=/landing",
         );
         expect(getFiltersFromSearchParams(searchParams)).toEqual({
-            utmSource: "google",
-            utmMedium: "cpc",
-            utmCampaign: "summer_sale",
-            utmTerm: "analytics",
-            utmContent: "banner_ad",
-            path: "/landing",
+            utmSource: { op: "eq", value: "google" },
+            utmMedium: { op: "eq", value: "cpc" },
+            utmCampaign: { op: "eq", value: "summer_sale" },
+            utmTerm: { op: "eq", value: "analytics" },
+            utmContent: { op: "eq", value: "banner_ad" },
+            path: { op: "eq", value: "/landing" },
         });
     });
 
@@ -54,11 +54,29 @@ describe("getFiltersFromSearchParams", () => {
             "?path=/about&referrer=google.com&utmSource=google&utmMedium=email&browserName=chrome",
         );
         expect(getFiltersFromSearchParams(searchParams)).toEqual({
-            path: "/about",
-            referrer: "google.com",
-            utmSource: "google",
-            utmMedium: "email",
-            browserName: "chrome",
+            path: { op: "eq", value: "/about" },
+            referrer: { op: "eq", value: "google.com" },
+            utmSource: { op: "eq", value: "google" },
+            utmMedium: { op: "eq", value: "email" },
+            browserName: { op: "eq", value: "chrome" },
+        });
+    });
+
+    test("it should parse a leading '!' as the ne (exclude) operator", () => {
+        const searchParams = new URLSearchParams(
+            "?path=!/admin&referrer=!spam.com&country=us",
+        );
+        expect(getFiltersFromSearchParams(searchParams)).toEqual({
+            path: { op: "ne", value: "/admin" },
+            referrer: { op: "ne", value: "spam.com" },
+            country: { op: "eq", value: "us" },
+        });
+    });
+
+    test("it should treat a literal '!' alone as an empty-value ne filter", () => {
+        const searchParams = new URLSearchParams("?path=!");
+        expect(getFiltersFromSearchParams(searchParams)).toEqual({
+            path: { op: "ne", value: "" },
         });
     });
 });

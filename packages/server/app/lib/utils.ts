@@ -4,6 +4,8 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 
+import { FilterValue, SearchFilters } from "~/lib/types";
+
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
@@ -20,55 +22,42 @@ export function paramsFromUrl(url: string) {
     return params;
 }
 
-interface SearchFilters {
-    path?: string;
-    referrer?: string;
-    deviceType?: string;
-    country?: string;
-    browserName?: string;
-    browserVersion?: string;
-    utmSource?: string;
-    utmMedium?: string;
-    utmCampaign?: string;
-    utmTerm?: string;
-    utmContent?: string;
+// Parse a raw URL search-param value into a FilterValue. A leading "!" denotes
+// the ne (exclude) operator; everything else is treated as eq. See ADR-005.
+function parseFilterValue(raw: string): FilterValue {
+    if (raw.startsWith("!")) {
+        return { op: "ne", value: raw.slice(1) };
+    }
+    return { op: "eq", value: raw };
 }
+
+// Serialise a FilterValue back to the URL-encoded form: "!value" for ne, bare
+// value for eq. The inverse of parseFilterValue.
+export function filterValueToParam(fv: FilterValue): string {
+    return fv.op === "ne" ? `!${fv.value}` : fv.value;
+}
+
+const FILTER_KEYS: Array<keyof SearchFilters> = [
+    "path",
+    "referrer",
+    "deviceType",
+    "country",
+    "browserName",
+    "browserVersion",
+    "utmSource",
+    "utmMedium",
+    "utmCampaign",
+    "utmTerm",
+    "utmContent",
+];
 
 export function getFiltersFromSearchParams(searchParams: URLSearchParams) {
     const filters: SearchFilters = {};
 
-    if (searchParams.has("path")) {
-        filters.path = searchParams.get("path") || "";
-    }
-    if (searchParams.has("referrer")) {
-        filters.referrer = searchParams.get("referrer") || "";
-    }
-    if (searchParams.has("deviceType")) {
-        filters.deviceType = searchParams.get("deviceType") || "";
-    }
-    if (searchParams.has("country")) {
-        filters.country = searchParams.get("country") || "";
-    }
-    if (searchParams.has("browserName")) {
-        filters.browserName = searchParams.get("browserName") || "";
-    }
-    if (searchParams.has("browserVersion")) {
-        filters.browserVersion = searchParams.get("browserVersion") || "";
-    }
-    if (searchParams.has("utmSource")) {
-        filters.utmSource = searchParams.get("utmSource") || "";
-    }
-    if (searchParams.has("utmMedium")) {
-        filters.utmMedium = searchParams.get("utmMedium") || "";
-    }
-    if (searchParams.has("utmCampaign")) {
-        filters.utmCampaign = searchParams.get("utmCampaign") || "";
-    }
-    if (searchParams.has("utmTerm")) {
-        filters.utmTerm = searchParams.get("utmTerm") || "";
-    }
-    if (searchParams.has("utmContent")) {
-        filters.utmContent = searchParams.get("utmContent") || "";
+    for (const key of FILTER_KEYS) {
+        if (searchParams.has(key)) {
+            filters[key] = parseFilterValue(searchParams.get(key) || "");
+        }
     }
 
     return filters;

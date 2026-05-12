@@ -338,7 +338,7 @@ describe("Dashboard route", () => {
         ],
         intervalType: "day",
         filters: {
-            path: "/lol",
+            path: { op: "eq", value: "/lol" },
         },
     };
 

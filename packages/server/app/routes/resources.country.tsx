@@ -71,7 +71,9 @@ export const CountryCard = ({
             dataFetcher={useFetcher<typeof loader>()}
             loaderUrl="/resources/country"
             filters={filters}
-            onClick={(country) => onFilterChange({ ...filters, country })}
+            onClick={(value, op) =>
+                onFilterChange({ ...filters, country: { op, value } })
+            }
             timezone={timezone}
         />
     );

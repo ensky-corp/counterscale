@@ -1,4 +1,5 @@
-import { ExternalLink } from "lucide-react";
+import { Equal, EqualNot, ExternalLink } from "lucide-react";
+import type { FilterOp } from "~/lib/types";
 import {
     Table,
     TableBody,
@@ -22,6 +23,38 @@ function calculateCountPercentages(countByProperty: CountByProperty) {
         return `${percentage}%`;
     });
 }
+
+function FilterIconButtons({
+    onInclude,
+    onExclude,
+}: {
+    onInclude: () => void;
+    onExclude: () => void;
+}) {
+    return (
+        <span className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+            <button
+                type="button"
+                onClick={onInclude}
+                aria-label="Include in filter"
+                title="Include"
+                className="p-1 rounded hover:bg-muted"
+            >
+                <Equal size={14} />
+            </button>
+            <button
+                type="button"
+                onClick={onExclude}
+                aria-label="Exclude from filter"
+                title="Exclude"
+                className="p-1 rounded hover:bg-muted"
+            >
+                <EqualNot size={14} />
+            </button>
+        </span>
+    );
+}
+
 export default function TableCard({
     countByProperty,
     columnHeaders,
@@ -30,7 +63,7 @@ export default function TableCard({
 }: {
     countByProperty: CountByProperty;
     columnHeaders: string[];
-    onClick?: (key: string) => void;
+    onClick?: (key: string, op: FilterOp) => void;
     labelFormatter?: (label: string) => string;
 }) {
     const barChartPercentages = calculateCountPercentages(countByProperty);
@@ -98,7 +131,10 @@ export default function TableCard({
                                         {onClick ? (
                                             <button
                                                 onClick={() =>
-                                                    onClick(key as string)
+                                                    onClick(
+                                                        key as string,
+                                                        "eq",
+                                                    )
                                                 }
                                                 className="hover:underline select-text text-left truncate"
                                             >
@@ -116,13 +152,32 @@ export default function TableCard({
                                         >
                                             <ExternalLink size={16} />
                                         </a>
+                                        {onClick && (
+                                            <FilterIconButtons
+                                                onInclude={() =>
+                                                    onClick(
+                                                        key as string,
+                                                        "eq",
+                                                    )
+                                                }
+                                                onExclude={() =>
+                                                    onClick(
+                                                        key as string,
+                                                        "ne",
+                                                    )
+                                                }
+                                            />
+                                        )}
                                     </>
                                 ) : (
                                     <>
                                         {onClick ? (
                                             <button
                                                 onClick={() =>
-                                                    onClick(key as string)
+                                                    onClick(
+                                                        key as string,
+                                                        "eq",
+                                                    )
                                                 }
                                                 className="hover:underline select-text text-left truncate"
                                             >
@@ -130,6 +185,22 @@ export default function TableCard({
                                             </button>
                                         ) : (
                                             formattedLabel
+                                        )}
+                                        {onClick && (
+                                            <FilterIconButtons
+                                                onInclude={() =>
+                                                    onClick(
+                                                        key as string,
+                                                        "eq",
+                                                    )
+                                                }
+                                                onExclude={() =>
+                                                    onClick(
+                                                        key as string,
+                                                        "ne",
+                                                    )
+                                                }
+                                            />
                                         )}
                                     </>
                                 )}

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, cleanup } from "@testing-library/react";
+import { fireEvent, render, screen, cleanup } from "@testing-library/react";
 import { describe, test, expect, vi, afterEach } from "vitest";
 import "vitest-dom/extend-expect";
 
@@ -89,11 +89,16 @@ describe("TableCard", () => {
         };
 
         const { container } = render(<TableCard {...propsWithOnClick} />);
-        
-        // Should have both clickable buttons and external links
-        const buttons = screen.getAllByRole("button");
-        expect(buttons).toHaveLength(2);
-        
+
+        // The label buttons (one per row); hover include/exclude icons are
+        // covered by a dedicated test. Match by accessible name.
+        expect(
+            screen.getByRole("button", { name: /https:\/\/example\.com/ }),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByRole("button", { name: /not-a-url/ }),
+        ).toBeInTheDocument();
+
         const externalLinks = container.querySelectorAll('a[href^="http"]');
         expect(externalLinks).toHaveLength(1);
         expect(externalLinks[0]).toHaveAttribute("href", "https://example.com");
@@ -118,6 +123,49 @@ describe("TableCard", () => {
         
         // But display the formatted label
         expect(screen.getByText("HTTPS://EXAMPLE.COM")).toBeInTheDocument();
+    });
+
+    test("renders include/exclude hover icons when onClick is provided and forwards the chosen op", () => {
+        const mockOnClick = vi.fn();
+        const props = {
+            countByProperty: [["/foo", "100"]] as [string, string, string?][],
+            columnHeaders: ["Path", "Visitors"],
+            onClick: mockOnClick,
+        };
+
+        render(<TableCard {...props} />);
+
+        const includeBtn = screen.getByRole("button", {
+            name: /include in filter/i,
+        });
+        const excludeBtn = screen.getByRole("button", {
+            name: /exclude from filter/i,
+        });
+
+        expect(includeBtn).toBeInTheDocument();
+        expect(excludeBtn).toBeInTheDocument();
+
+        fireEvent.click(includeBtn);
+        expect(mockOnClick).toHaveBeenLastCalledWith("/foo", "eq");
+
+        fireEvent.click(excludeBtn);
+        expect(mockOnClick).toHaveBeenLastCalledWith("/foo", "ne");
+    });
+
+    test("does not render include/exclude icons when onClick is not provided", () => {
+        const props = {
+            countByProperty: [["/foo", "100"]] as [string, string, string?][],
+            columnHeaders: ["Path", "Visitors"],
+        };
+
+        render(<TableCard {...props} />);
+
+        expect(
+            screen.queryByRole("button", { name: /include in filter/i }),
+        ).toBeNull();
+        expect(
+            screen.queryByRole("button", { name: /exclude from filter/i }),
+        ).toBeNull();
     });
 
     test("handles edge cases for URL detection", () => {
