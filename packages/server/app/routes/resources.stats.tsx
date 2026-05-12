@@ -3,6 +3,7 @@ import {
     getDateTimeRange,
     getFiltersFromSearchParams,
     paramsFromUrl,
+    searchFiltersToParams,
 } from "~/lib/utils";
 import { useEffect } from "react";
 import { useFetcher } from "react-router";
@@ -76,7 +77,7 @@ export const StatsCard = ({
             site: siteId,
             interval,
             timezone,
-            ...filters,
+            ...searchFiltersToParams(filters),
         };
 
         dataFetcher.submit(params, {

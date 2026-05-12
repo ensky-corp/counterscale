@@ -4,6 +4,7 @@ import TableCard from "~/components/TableCard";
 import { Card } from "./ui/card";
 import PaginationButtons from "./PaginationButtons";
 import { FilterOp, SearchFilters } from "~/lib/types";
+import { searchFiltersToParams } from "~/lib/utils";
 
 interface PaginatedTableCardProps {
     siteId: string;
@@ -36,7 +37,7 @@ const PaginatedTableCard = ({
             site: siteId,
             interval,
             timezone,
-            ...filters,
+            ...searchFiltersToParams(filters),
             page,
         };
 

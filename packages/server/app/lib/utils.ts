@@ -37,6 +37,20 @@ export function filterValueToParam(fv: FilterValue): string {
     return fv.op === "ne" ? `!${fv.value}` : fv.value;
 }
 
+// Convert SearchFilters into a flat string map suitable for spreading into
+// fetcher.submit() params. Without this, a FilterValue object spreads as
+// [object Object] in the URL and the loader receives no usable filter.
+export function searchFiltersToParams(
+    filters: SearchFilters | undefined,
+): Record<string, string> {
+    const params: Record<string, string> = {};
+    if (!filters) return params;
+    for (const [key, fv] of Object.entries(filters)) {
+        if (fv) params[key] = filterValueToParam(fv);
+    }
+    return params;
+}
+
 const FILTER_KEYS: Array<keyof SearchFilters> = [
     "path",
     "referrer",

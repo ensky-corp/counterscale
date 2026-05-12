@@ -2,6 +2,7 @@ import {
     getFiltersFromSearchParams,
     getDateTimeRange,
     maskBrowserVersion,
+    searchFiltersToParams,
 } from "../utils";
 import { describe, test, expect, beforeEach, afterEach, vi } from "vitest";
 import dayjs from "dayjs";
@@ -78,6 +79,41 @@ describe("getFiltersFromSearchParams", () => {
         expect(getFiltersFromSearchParams(searchParams)).toEqual({
             path: { op: "ne", value: "" },
         });
+    });
+});
+
+describe("searchFiltersToParams", () => {
+    test("returns an empty object for undefined or empty filters", () => {
+        expect(searchFiltersToParams(undefined)).toEqual({});
+        expect(searchFiltersToParams({})).toEqual({});
+    });
+
+    test("serialises eq filters to bare values", () => {
+        expect(
+            searchFiltersToParams({
+                path: { op: "eq", value: "/about" },
+                country: { op: "eq", value: "us" },
+            }),
+        ).toEqual({ path: "/about", country: "us" });
+    });
+
+    test("serialises ne filters with a leading '!'", () => {
+        expect(
+            searchFiltersToParams({
+                path: { op: "ne", value: "/admin" },
+                referrer: { op: "ne", value: "spam.com" },
+            }),
+        ).toEqual({ path: "!/admin", referrer: "!spam.com" });
+    });
+
+    test("round-trips with getFiltersFromSearchParams", () => {
+        const filters = {
+            path: { op: "ne" as const, value: "/admin" },
+            country: { op: "eq" as const, value: "us" },
+        };
+        const params = searchFiltersToParams(filters);
+        const sp = new URLSearchParams(params);
+        expect(getFiltersFromSearchParams(sp)).toEqual(filters);
     });
 });
 
