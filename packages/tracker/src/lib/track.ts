@@ -92,7 +92,14 @@ export async function trackPageview(
 
     const { hostname, path } = getHostnameAndPath(url, true);
     const referrer = getBrowserReferrer(hostname, opts.referrer || "");
-    const utmParams = getUtmParamsFromBrowserUrl(url);
+    // UTMs describe this page load, not the canonical representation. A
+    // <link rel="canonical"> commonly strips the query string for SEO
+    // normalization, so reading from the canonical-derived `location` would
+    // silently drop attribution params. Always source UTMs from the real
+    // browser URL when no explicit opts.url is provided.
+    const utmSourceUrl =
+        opts.url ?? window.location.pathname + window.location.search;
+    const utmParams = getUtmParamsFromBrowserUrl(utmSourceUrl);
 
     let hitType: string | undefined;
     try {

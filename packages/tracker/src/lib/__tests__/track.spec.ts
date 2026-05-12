@@ -426,6 +426,128 @@ describe("trackPageview", () => {
         });
     });
 
+    describe("canonical link UTM handling", () => {
+        function mockCanonical(href: string) {
+            // querySelector is already spied in beforeEach; override here.
+            vi.spyOn(document, "querySelector").mockImplementation(
+                (selector: string) => {
+                    if (selector === 'link[rel="canonical"][href]') {
+                        return { href } as unknown as Element;
+                    }
+                    return null;
+                },
+            );
+        }
+
+        test("canonical strips query but window.location has UTMs -> UTMs reported", async () => {
+            Object.defineProperty(window, "location", {
+                writable: true,
+                value: {
+                    pathname: "/",
+                    search: "?utm_source=chatgpt.com&utm_medium=referral",
+                    host: "note-bridge.co",
+                },
+            });
+            mockCanonical("https://note-bridge.co/en");
+
+            const client = new Client({
+                siteId: "test-site",
+                reporterUrl: "https://example.com/collect",
+                autoTrackPageviews: false,
+            });
+
+            await trackPageview(client);
+
+            expect(makeRequestMock).toHaveBeenCalledTimes(1);
+            const callArgs = makeRequestMock.mock.calls[0][1];
+            expect(callArgs).toHaveProperty("us", "chatgpt.com");
+            expect(callArgs).toHaveProperty("um", "referral");
+            // Canonical still drives the normalized path.
+            expect(callArgs).toHaveProperty("p", "/en");
+        });
+
+        test("canonical absent + window.location has UTMs -> UTMs reported (regression guard)", async () => {
+            Object.defineProperty(window, "location", {
+                writable: true,
+                value: {
+                    pathname: "/landing",
+                    search: "?utm_source=newsletter&utm_campaign=spring",
+                    host: "example.com",
+                },
+            });
+            // querySelector returns null by default from beforeEach.
+
+            const client = new Client({
+                siteId: "test-site",
+                reporterUrl: "https://example.com/collect",
+                autoTrackPageviews: false,
+            });
+
+            await trackPageview(client);
+
+            expect(makeRequestMock).toHaveBeenCalledTimes(1);
+            const callArgs = makeRequestMock.mock.calls[0][1];
+            expect(callArgs).toHaveProperty("us", "newsletter");
+            expect(callArgs).toHaveProperty("uc", "spring");
+            expect(callArgs).toHaveProperty("p", "/landing");
+        });
+
+        test("opts.url with UTMs + canonical present -> UTMs come from opts.url", async () => {
+            Object.defineProperty(window, "location", {
+                writable: true,
+                value: {
+                    pathname: "/",
+                    search: "?utm_source=window_source",
+                    host: "example.com",
+                },
+            });
+            mockCanonical("https://example.com/en");
+
+            const client = new Client({
+                siteId: "test-site",
+                reporterUrl: "https://example.com/collect",
+                autoTrackPageviews: false,
+            });
+
+            await trackPageview(client, {
+                url: "/explicit?utm_source=explicit_source&utm_medium=email",
+            });
+
+            expect(makeRequestMock).toHaveBeenCalledTimes(1);
+            const callArgs = makeRequestMock.mock.calls[0][1];
+            expect(callArgs).toHaveProperty("us", "explicit_source");
+            expect(callArgs).toHaveProperty("um", "email");
+        });
+
+        test("opts.url without UTMs + window.location has UTMs -> UTMs NOT reported (opts.url authoritative)", async () => {
+            Object.defineProperty(window, "location", {
+                writable: true,
+                value: {
+                    pathname: "/",
+                    search: "?utm_source=window_source",
+                    host: "example.com",
+                },
+            });
+            mockCanonical("https://example.com/en");
+
+            const client = new Client({
+                siteId: "test-site",
+                reporterUrl: "https://example.com/collect",
+                autoTrackPageviews: false,
+            });
+
+            await trackPageview(client, {
+                url: "/explicit-clean",
+            });
+
+            expect(makeRequestMock).toHaveBeenCalledTimes(1);
+            const callArgs = makeRequestMock.mock.calls[0][1];
+            expect(callArgs).not.toHaveProperty("us");
+            expect(callArgs).not.toHaveProperty("um");
+            expect(callArgs).not.toHaveProperty("uc");
+        });
+    });
+
     describe("referrer query parameter tracking", () => {
         test("should use ref parameter when document.referrer is missing", async () => {
             // Mock location with ref parameter
