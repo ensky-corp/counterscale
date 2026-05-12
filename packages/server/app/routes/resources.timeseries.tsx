@@ -4,6 +4,7 @@ import {
     paramsFromUrl,
     getIntervalType,
     getDateTimeRange,
+    searchFiltersToParams,
 } from "~/lib/utils";
 import { useEffect } from "react";
 import { useFetcher } from "react-router";
@@ -82,7 +83,7 @@ export const TimeSeriesCard = ({
             site: siteId,
             interval,
             timezone,
-            ...filters,
+            ...searchFiltersToParams(filters),
         };
 
         dataFetcher.submit(params, {
