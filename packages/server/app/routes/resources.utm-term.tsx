@@ -47,7 +47,9 @@ export const UtmTermCard = ({
             dataFetcher={useFetcher<typeof loader>()}
             loaderUrl="/resources/utm-term"
             filters={filters}
-            onClick={(utmTerm) => onFilterChange({ ...filters, utmTerm })}
+            onClick={(value, op) =>
+                onFilterChange({ ...filters, utmTerm: { op, value } })
+            }
             timezone={timezone}
         />
     );

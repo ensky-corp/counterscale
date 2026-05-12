@@ -397,16 +397,15 @@ describe("AnalyticsEngineAPI", () => {
                 "7d",
                 "America/New_York",
                 {
-                    country: "CA",
+                    country: { op: "eq", value: "CA" },
                 },
             );
 
             expect(fetch).toHaveBeenCalledTimes(2);
-            expect(
-                (fetch as Mock).mock.calls[0][1].body
-                    .replace(/\s+/g, " ") // removes tabs and whitespace from query
-                    .trim(),
-            );
+            const eqQuery = (fetch as Mock).mock.calls[0][1].body
+                .replace(/\s+/g, " ")
+                .trim();
+            expect(eqQuery).toContain("AND blob4 = 'CA'");
             // console.log(result);
             expect(await result).toEqual({
                 CA: {
@@ -415,6 +414,36 @@ describe("AnalyticsEngineAPI", () => {
                     bounces: 0,
                 },
             });
+        });
+
+        test("emits != for ne filter operator", async () => {
+            fetch
+                .mockResolvedValueOnce(
+                    createFetchResponse({
+                        data: [],
+                    }),
+                )
+                .mockResolvedValueOnce(
+                    createFetchResponse({
+                        data: [],
+                    }),
+                );
+
+            await api.getAllCountsByColumn(
+                "example.com",
+                "country",
+                "7d",
+                "America/New_York",
+                {
+                    country: { op: "ne", value: "CA" },
+                },
+            );
+
+            const neQuery = (fetch as Mock).mock.calls[0][1].body
+                .replace(/\s+/g, " ")
+                .trim();
+            expect(neQuery).toContain("AND blob4 != 'CA'");
+            expect(neQuery).not.toContain("AND blob4 = 'CA'");
         });
 
         test("should handle case where there are no results", async () => {

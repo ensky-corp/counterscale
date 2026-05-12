@@ -1,16 +1,23 @@
+export type FilterOp = "eq" | "ne";
+
+export interface FilterValue {
+    op: FilterOp;
+    value: string;
+}
+
 export interface SearchFilters {
-    path?: string;
-    referrer?: string;
-    deviceModel?: string;
-    deviceType?: string;
-    country?: string;
-    browserName?: string;
-    browserVersion?: string;
-    utmSource?: string;
-    utmMedium?: string;
-    utmCampaign?: string;
-    utmTerm?: string;
-    utmContent?: string;
+    path?: FilterValue;
+    referrer?: FilterValue;
+    deviceModel?: FilterValue;
+    deviceType?: FilterValue;
+    country?: FilterValue;
+    browserName?: FilterValue;
+    browserVersion?: FilterValue;
+    utmSource?: FilterValue;
+    utmMedium?: FilterValue;
+    utmCampaign?: FilterValue;
+    utmTerm?: FilterValue;
+    utmContent?: FilterValue;
 }
 
 export interface User {

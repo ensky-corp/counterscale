@@ -149,7 +149,10 @@ function filtersToSql(filters: SearchFilters) {
     let filterStr = "";
     supportedFilters.forEach((filter) => {
         if (Object.hasOwnProperty.call(filters, filter)) {
-            filterStr += `AND ${ColumnMappings[filter]} = '${filters[filter]}'`;
+            const fv = filters[filter];
+            if (!fv) return;
+            const operator = fv.op === "ne" ? "!=" : "=";
+            filterStr += `AND ${ColumnMappings[filter]} ${operator} '${fv.value}'`;
         }
     });
     return filterStr;

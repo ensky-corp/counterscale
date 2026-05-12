@@ -47,8 +47,11 @@ export const UtmCampaignCard = ({
             dataFetcher={useFetcher<typeof loader>()}
             loaderUrl="/resources/utm-campaign"
             filters={filters}
-            onClick={(utmCampaign) =>
-                onFilterChange({ ...filters, utmCampaign })
+            onClick={(value, op) =>
+                onFilterChange({
+                    ...filters,
+                    utmCampaign: { op, value },
+                })
             }
             timezone={timezone}
         />

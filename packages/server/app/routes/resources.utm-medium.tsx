@@ -47,7 +47,9 @@ export const UtmMediumCard = ({
             dataFetcher={useFetcher<typeof loader>()}
             loaderUrl="/resources/utm-medium"
             filters={filters}
-            onClick={(utmMedium) => onFilterChange({ ...filters, utmMedium })}
+            onClick={(value, op) =>
+                onFilterChange({ ...filters, utmMedium: { op, value } })
+            }
             timezone={timezone}
         />
     );

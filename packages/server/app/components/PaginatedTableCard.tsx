@@ -3,7 +3,7 @@ import TableCard from "~/components/TableCard";
 
 import { Card } from "./ui/card";
 import PaginationButtons from "./PaginationButtons";
-import { SearchFilters } from "~/lib/types";
+import { FilterOp, SearchFilters } from "~/lib/types";
 
 interface PaginatedTableCardProps {
     siteId: string;
@@ -12,7 +12,7 @@ interface PaginatedTableCardProps {
     columnHeaders: string[];
     filters?: SearchFilters;
     loaderUrl: string;
-    onClick?: (key: string) => void;
+    onClick?: (key: string, op: FilterOp) => void;
     timezone?: string;
     labelFormatter?: (label: string) => string;
 }

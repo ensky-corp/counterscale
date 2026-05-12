@@ -38,6 +38,7 @@ import { UtmTermCard } from "./resources.utm-term";
 import { UtmContentCard } from "./resources.utm-content";
 
 import {
+    filterValueToParam,
     getFiltersFromSearchParams,
     getIntervalType,
     getUserTimezone,
@@ -161,10 +162,10 @@ export default function Dashboard() {
         setSearchParams((prev) => {
             for (const key in filters) {
                 if (Object.hasOwnProperty.call(filters, key)) {
-                    prev.set(
-                        key,
-                        filters[key as keyof SearchFilters] as string,
-                    );
+                    const fv = filters[key as keyof SearchFilters];
+                    if (fv) {
+                        prev.set(key, filterValueToParam(fv));
+                    }
                 }
             }
             return prev;

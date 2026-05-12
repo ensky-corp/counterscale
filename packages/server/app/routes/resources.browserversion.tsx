@@ -43,11 +43,17 @@ export const BrowserVersionCard = ({
         <PaginatedTableCard
             siteId={siteId}
             interval={interval}
-            columnHeaders={[`${filters.browserName} Versions`, "Visitors"]}
+            columnHeaders={[
+                `${filters.browserName?.value ?? ""} Versions`,
+                "Visitors",
+            ]}
             dataFetcher={useFetcher<typeof loader>()}
             loaderUrl="/resources/browserversion"
-            onClick={(browserVersion) =>
-                onFilterChange({ ...filters, browserVersion })
+            onClick={(value, op) =>
+                onFilterChange({
+                    ...filters,
+                    browserVersion: { op, value },
+                })
             }
             filters={filters}
             timezone={timezone}
