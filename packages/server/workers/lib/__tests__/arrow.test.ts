@@ -56,7 +56,7 @@ describe("recordsToTable", () => {
         expect(rows).toEqual(records);
     });
 
-    test("handles null/undefined values without crashing", () => {
+    test("round-trips null/undefined values as null", () => {
         const records = [
             { a: "x", b: 1 },
             { a: null, b: null },
@@ -65,7 +65,31 @@ describe("recordsToTable", () => {
         const table = recordsToTable(records);
         const buf = new Uint8Array(tableToIPC(table, "file"));
         const decoded = tableFromIPC(buf);
-        expect(decoded.numRows).toBe(3);
+        const rows = decoded.toArray().map((row: unknown) => {
+            const values = row as Record<string, unknown>;
+            return { a: values.a, b: values.b };
+        });
+
+        expect(rows).toEqual([
+            { a: "x", b: 1 },
+            { a: null, b: null },
+            { a: null, b: null },
+        ]);
+    });
+
+    test("only allocates validity bitmaps for columns with nulls", () => {
+        const table = recordsToTable([
+            { nullable: null, complete: "x" },
+            { nullable: "value", complete: "y" },
+        ]);
+        const batch = table.batches[0];
+        const nullable = batch.getChild("nullable")?.data[0];
+        const complete = batch.getChild("complete")?.data[0];
+
+        expect(nullable?.nullCount).toBe(1);
+        expect(nullable?.nullBitmap.byteLength).toBe(8);
+        expect(complete?.nullCount).toBe(0);
+        expect(complete?.nullBitmap.byteLength).toBe(0);
     });
 
     test("returns empty table for empty input", () => {

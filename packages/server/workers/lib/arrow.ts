@@ -15,6 +15,29 @@ import dayjs from "dayjs";
 type RecordValue = string | number | null | undefined;
 type Record = { [key: string]: RecordValue };
 
+function buildValidityBitmap(values: RecordValue[]): {
+    nullCount: number;
+    nullBitmap?: Uint8Array;
+} {
+    let nullCount = 0;
+    for (const value of values) {
+        if (value == null) {
+            nullCount++;
+        }
+    }
+    if (nullCount === 0) {
+        return { nullCount };
+    }
+
+    const nullBitmap = new Uint8Array(Math.ceil(values.length / 64) * 8);
+    for (let i = 0; i < values.length; i++) {
+        if (values[i] != null) {
+            nullBitmap[i >> 3] |= 1 << (i & 7);
+        }
+    }
+    return { nullCount, nullBitmap };
+}
+
 // Build a Utf8 Data buffer directly from an array of strings.
 // Bypasses apache-arrow's Builder path, which uses `new Function()` for
 // validity-checking codegen and is forbidden by the Cloudflare Workers
@@ -38,10 +61,12 @@ function buildUtf8Data(values: (string | null | undefined)[]): Data<Utf8> {
         pos += encoded[i].length;
     }
     valueOffsets[values.length] = pos;
+    const { nullCount, nullBitmap } = buildValidityBitmap(values);
     return makeData({
         type: new Utf8(),
         length: values.length,
-        nullCount: 0,
+        nullCount,
+        nullBitmap,
         valueOffsets,
         data,
     });
@@ -52,17 +77,21 @@ function buildFloat64Data(values: (number | null | undefined)[]): Data<Float64> 
     for (let i = 0; i < values.length; i++) {
         buf[i] = values[i] ?? 0;
     }
+    const { nullCount, nullBitmap } = buildValidityBitmap(values);
     return makeData({
         type: new Float64(),
         length: values.length,
-        nullCount: 0,
+        nullCount,
+        nullBitmap,
         data: buf,
     });
 }
 
-// Convert an array of homogeneous records to an Arrow Table without invoking
-// the Builder/`new Function()` codegen path. Column type is inferred from the
-// first non-null sample per column: `number` → Float64, otherwise → Utf8.
+/**
+ * Converts homogeneous records to an Arrow Table without Builder codegen and
+ * preserves null or undefined values as Arrow nulls. Column type is inferred
+ * from the first non-null sample: `number` becomes Float64, otherwise Utf8.
+ */
 export function recordsToTable(records: Record[]): Table {
     if (records.length === 0) {
         return new Table(new Schema([]));
